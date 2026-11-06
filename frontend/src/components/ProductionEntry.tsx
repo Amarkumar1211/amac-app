@@ -34,7 +34,9 @@ interface MasterDatabaseRecord {
   partName: string;
   customer: string;
   cycleTime: number;
-  productionOutputPerMachine: number;
+  noOfCavity?: number;
+  shiftShot?: number;
+  productionOutputPerMachine?: number;
   targetRev01?: number;
   dispatchTarget?: number;
   calculatedRejectionPercentage?: number;
@@ -898,20 +900,24 @@ export default function ProductionEntryScreen() {
     const partId = parseInt(partIdStr);
     const part = masterParts.find(p => p.partId === partId);
     if (part) {
-      // Shift Target = Machine Total Day Capacity / 2 (since each day has 2 shifts: Shift A & Shift B)
-      const shiftQty = part.productionOutputPerMachine && part.productionOutputPerMachine > 0
-        ? Math.ceil(part.productionOutputPerMachine / 2)
-        : (part.cycleTime && part.cycleTime > 0
-            ? Math.round(27000 / part.cycleTime)
-            : 0);
+      // Planned Qty = No of Cavity * Shift Shot (where Shift Shot = (10hrs * 3600) / Cycle Time = 36000 / Cycle Time)
+      const noOfCavity = part.noOfCavity && part.noOfCavity > 0 ? part.noOfCavity : 1;
+      const shiftShot = part.shiftShot && part.shiftShot > 0 
+        ? part.shiftShot 
+        : (part.cycleTime && part.cycleTime > 0 ? Math.round(36000 / part.cycleTime) : 0);
+      const plannedQty = shiftShot > 0 
+        ? (noOfCavity * shiftShot)
+        : (part.productionOutputPerMachine && part.productionOutputPerMachine > 0 ? Math.ceil(part.productionOutputPerMachine / 2) : 0);
+
+      const cycleTime = part.cycleTime > 0 ? part.cycleTime : (shiftShot > 0 ? Math.round(36000 / shiftShot) : 0);
 
       setEntryRows(prev => {
         const newRows = [...prev];
         newRows[index] = {
           ...newRows[index],
           partId,
-          plannedQty: shiftQty,
-          cycleTime: part.cycleTime
+          plannedQty,
+          cycleTime
         };
         return newRows;
       });

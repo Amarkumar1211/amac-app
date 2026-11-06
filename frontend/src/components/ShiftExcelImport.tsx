@@ -109,7 +109,11 @@ export default function ShiftExcelImport({ onBack, onImportSuccess }: { onBack?:
         partName: fromApi.partName,
         id: fromApi.id,
         cycleTime: fromApi.cycleTime || 60,
-        plannedQty: fromApi.productionOutputPerMachine ? Math.ceil(fromApi.productionOutputPerMachine / 2) : (fromApi.cycleTime ? Math.round(27000 / fromApi.cycleTime) : 0),
+        plannedQty: (() => {
+          const shots = (fromApi as any).shiftShot || (fromApi.cycleTime ? Math.round(36000 / fromApi.cycleTime) : 0);
+          const cav = (fromApi as any).noOfCavity || 1;
+          return shots > 0 ? (cav * shots) : (fromApi.productionOutputPerMachine ? Math.ceil(fromApi.productionOutputPerMachine / 2) : 0);
+        })(),
         isRegistered: true
       };
     }

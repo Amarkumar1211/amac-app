@@ -59,6 +59,9 @@ interface MasterPart {
   id?: number;
   partNo: string;
   partName: string;
+  cycleTime?: number;
+  noOfCavity?: number;
+  shiftShot?: number;
   productionOutputPerMachine?: number;
   shiftTarget?: number;
   dailyTarget?: number;
@@ -197,7 +200,11 @@ export default function DownstreamEntryScreen({ departmentName }: { departmentNa
 
     let planned = currentEntry.plannedQty || 0;
     if (part && !planned) {
-      if (part.shiftTarget && part.shiftTarget > 0) {
+      const shots = (part as any).shiftShot || (part.cycleTime ? Math.round(36000 / part.cycleTime) : 0);
+      const cav = (part as any).noOfCavity || 1;
+      if (shots > 0) {
+        planned = cav * shots;
+      } else if (part.shiftTarget && part.shiftTarget > 0) {
         planned = part.shiftTarget;
       } else if (part.productionOutputPerMachine && part.productionOutputPerMachine > 0) {
         planned = Math.ceil(part.productionOutputPerMachine / 2);

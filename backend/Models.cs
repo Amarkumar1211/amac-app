@@ -70,6 +70,9 @@ public class MasterPart
     public double CastingWeight { get; set; }
     public double CycleTime { get; set; }
     
+    public int NoOfCavity { get; set; } = 1;
+    public double ShiftShot { get; set; }
+    
     [MaxLength(100)]
     public string Material { get; set; } = string.Empty;
     
@@ -377,6 +380,8 @@ public class MasterDatabaseDto
     public double ShotWeight { get; set; }
     public double CastingWeight { get; set; }
     public double CycleTime { get; set; }
+    public int NoOfCavity { get; set; } = 1;
+    public double ShiftShot { get; set; }
     public string Material { get; set; } = string.Empty;
     public bool RequiresCore { get; set; }
     public string? CoreType { get; set; }

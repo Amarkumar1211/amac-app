@@ -104,3 +104,4 @@ To start both backend and frontend services simultaneously in development:
 │
 └── start.bat                 # Development launch script
 ```
+

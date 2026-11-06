@@ -219,6 +219,9 @@ namespace AmacBackend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("NoOfCavity")
+                        .HasColumnType("int");
+
                     b.Property<string>("PartName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -240,6 +243,9 @@ namespace AmacBackend.Migrations
 
                     b.Property<bool>("RequiresHT")
                         .HasColumnType("bit");
+
+                    b.Property<double>("ShiftShot")
+                        .HasColumnType("float");
 
                     b.Property<double>("ShotWeight")
                         .HasColumnType("float");

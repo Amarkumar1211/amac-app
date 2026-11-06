@@ -13,12 +13,14 @@ interface MasterDatabaseRecord {
   shotWeight: number;
   castingWeight: number;
   cycleTime: number;
+  noOfCavity?: number;
+  shiftShot?: number;
   material: string;
   requiresCore: boolean;
   coreType?: string;
   requiresHT: boolean;
   htType?: string;
-  productionOutputPerMachine: number;
+  productionOutputPerMachine?: number;
   dispatchLocation: string;
   planId?: number;
   monthYear: string;
@@ -30,7 +32,9 @@ interface MasterDatabaseRecord {
 
 const emptyRecord: MasterDatabaseRecord = {
   partId: 0, partNo: '', partName: '', customer: '',
-  shotWeight: 0, castingWeight: 0, cycleTime: 0, material: '',
+  shotWeight: 0, castingWeight: 0, cycleTime: 0,
+  noOfCavity: 1, shiftShot: 0,
+  material: '',
   requiresCore: false, coreType: '', requiresHT: false, htType: '',
   productionOutputPerMachine: 0, dispatchLocation: '',
   monthYear: new Date().toISOString().substring(0, 7),
@@ -161,6 +165,11 @@ export default function MasterDatabase() {
       const isAuto = r.rejectionBufferPercentage === 0 && calcRej > 0;
       const effectiveBuffer = isAuto ? calcRej : r.rejectionBufferPercentage;
       const prodTarget = Math.ceil(effectiveAsk * (1 + effectiveBuffer / 100));
+      const noOfCavity = r.noOfCavity && r.noOfCavity > 0 ? r.noOfCavity : 1;
+      const shiftShot = r.shiftShot && r.shiftShot > 0 
+        ? r.shiftShot 
+        : (r.cycleTime && r.cycleTime > 0 ? Math.round(36000 / r.cycleTime) : 0);
+      const shiftPlannedQty = noOfCavity * shiftShot;
       return {
         'Part No': r.partNo,
         'Part Name': r.partName,
@@ -170,8 +179,10 @@ export default function MasterDatabase() {
         'HT Type': r.requiresHT ? r.htType || 'Yes' : 'No',
         'Cast Wt (kg)': r.castingWeight,
         'Shot Wt (kg)': r.shotWeight,
-        'Cycle Time (s)': r.cycleTime,
-        'M/C Capacity per day': r.productionOutputPerMachine,
+        'No of Cavity': noOfCavity,
+        'Cycle Time (s)': r.cycleTime || (shiftShot > 0 ? Math.round(36000 / shiftShot) : 0),
+        'Shift Shot': shiftShot,
+        'Shift Planned Qty': shiftPlannedQty,
         'Dispatch Loc': r.dispatchLocation,
         'Customer Ask (Rev 00)': r.dispatchTarget,
         'Revised Ask (Rev 01)': r.targetRev01 || '',
@@ -180,8 +191,7 @@ export default function MasterDatabase() {
         'Production Target': prodTarget,
         'Core Qty Target': r.requiresCore ? prodTarget : 0,
         'Raw Mat. Needed (kg)': (prodTarget * r.castingWeight).toFixed(2),
-        'Daily Target': Math.ceil(prodTarget / 25),
-        'Shift Target': Math.ceil(prodTarget / 50)
+        'Daily Target': Math.ceil(prodTarget / 25)
       };
     });
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -194,8 +204,9 @@ export default function MasterDatabase() {
     const templateData = [{
       'Part No': 'EXAMPLE-01', 'Part Name': 'Example Part', 'Customer': 'Example Corp',
       'Material': 'Aluminum', 'Core Type': 'No', 'HT Type': 'Yes',
-      'Cast Wt (kg)': 10.5, 'Shot Wt (kg)': 12.5, 'Cycle Time (s)': 120,
-      'M/C Capacity per day': 200, 'Dispatch Loc': 'Pune',
+      'Cast Wt (kg)': 10.5, 'Shot Wt (kg)': 12.5,
+      'No of Cavity': 2, 'Cycle Time (s)': 120, 'Shift Shot': 300,
+      'Dispatch Loc': 'Pune',
       'Customer Ask (Rev 00)': 1000, 'Revised Ask (Rev 01)': '',
       'Rejection Buffer %': 5, 'Month (YYYY-MM)': selectedMonth
     }];
@@ -226,6 +237,14 @@ export default function MasterDatabase() {
           const reqCore = !!(row['Core Type'] && row['Core Type'] !== 'No' && row['Core Type'] !== 'False' && row['Core Type'] !== 0 && row['Core Type'] !== '0');
           const reqHT = !!(row['HT Type'] && row['HT Type'] !== 'No' && row['HT Type'] !== 'False' && row['HT Type'] !== 0 && row['HT Type'] !== '0');
           const importMonth = row['Month (YYYY-MM)'] ? String(row['Month (YYYY-MM)']).trim() : selectedMonth;
+          const cavity = Number(row['No of Cavity']) || Number(row['Cavity']) || 1;
+          let cycle = Number(row['Cycle Time (s)']) || Number(row['Cycle Time']) || 0;
+          let shots = Number(row['Shift Shot']) || Number(row['Shift Shots']) || 0;
+          if (cycle > 0 && shots <= 0) {
+            shots = Math.round(36000 / cycle);
+          } else if (shots > 0 && cycle <= 0) {
+            cycle = Math.round(36000 / shots);
+          }
           const payload: MasterDatabaseRecord = {
             partId: 0, partNo, partName: String(row['Part Name'] || ''),
             customer: String(row['Customer'] || ''), material: String(row['Material'] || ''),
@@ -235,8 +254,9 @@ export default function MasterDatabase() {
             htType: reqHT && row['HT Type'] !== 'Yes' ? String(row['HT Type']) : undefined,
             castingWeight: Number(row['Cast Wt (kg)']) || 0,
             shotWeight: Number(row['Shot Wt (kg)']) || 0,
-            cycleTime: Number(row['Cycle Time (s)']) || 0,
-            productionOutputPerMachine: Number(row['M/C Capacity per day']) || Number(row['Capacity/Day']) || 0,
+            noOfCavity: cavity,
+            cycleTime: cycle,
+            shiftShot: shots,
             dispatchLocation: String(row['Dispatch Loc'] || ''),
             monthYear: importMonth,
             dispatchTarget: Number(row['Customer Ask (Rev 00)']) || 0,
@@ -625,8 +645,20 @@ export default function MasterDatabase() {
                     <input className="input-field" type="number" step="0.01" value={editForm.castingWeight} onChange={e => setEditForm({ ...editForm, castingWeight: parseFloat(e.target.value) || 0 })} />
                     <label>Shot Wt (kg)</label>
                     <input className="input-field" type="number" step="0.01" value={editForm.shotWeight} onChange={e => setEditForm({ ...editForm, shotWeight: parseFloat(e.target.value) || 0 })} />
+                    <label>No of Cavity</label>
+                    <input className="input-field" type="number" min="1" step="1" value={editForm.noOfCavity || 1} onChange={e => setEditForm({ ...editForm, noOfCavity: parseInt(e.target.value) || 1 })} />
                     <label>Cycle Time (s)</label>
-                    <input className="input-field" type="number" value={editForm.cycleTime} onChange={e => setEditForm({ ...editForm, cycleTime: parseFloat(e.target.value) || 0 })} />
+                    <input className="input-field" type="number" value={editForm.cycleTime || ''} onChange={e => {
+                      const ct = parseFloat(e.target.value) || 0;
+                      const computedShots = ct > 0 ? Math.round(36000 / ct) : 0;
+                      setEditForm({ ...editForm, cycleTime: ct, shiftShot: computedShots });
+                    }} placeholder="e.g. 120" />
+                    <label>Shift Shot</label>
+                    <input className="input-field" type="number" min="0" value={editForm.shiftShot || (editForm.cycleTime > 0 ? Math.round(36000 / editForm.cycleTime) : '')} onChange={e => {
+                      const shots = parseFloat(e.target.value) || 0;
+                      const computedCycle = shots > 0 ? Math.round(36000 / shots) : 0;
+                      setEditForm({ ...editForm, shiftShot: shots, cycleTime: computedCycle });
+                    }} placeholder="e.g. 300" />
                     <label>Dispatch Loc</label>
                     <input className="input-field" value={editForm.dispatchLocation} onChange={e => setEditForm({ ...editForm, dispatchLocation: e.target.value })} />
                   </div>
@@ -653,8 +685,6 @@ export default function MasterDatabase() {
                       <label>HT Type</label>
                       <input className="input-field" value={editForm.htType || ''} onChange={e => setEditForm({ ...editForm, htType: e.target.value })} placeholder="e.g. T6" />
                     </>)}
-                    <label>M/C Output/day</label>
-                    <input className="input-field" type="number" value={editForm.productionOutputPerMachine} onChange={e => setEditForm({ ...editForm, productionOutputPerMachine: parseFloat(e.target.value) || 0 })} />
                   </div>
                 </div>
                 <div style={{ flex: '1 1 300px' }}>
@@ -670,7 +700,7 @@ export default function MasterDatabase() {
                       <span>%</span>
                     </div>
                     <div style={{ gridColumn: '1 / -1', background: '#f0f7ff', padding: '10px', borderRadius: '6px', marginTop: '6px', fontSize: '13px', border: '1px solid #bbdefb' }}>
-                      <strong style={{ color: '#1565c0' }}>Auto-Calculations:</strong>
+                      <strong style={{ color: '#1565c0' }}>Auto-Calculations & Capacity:</strong>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                         <span>Effective Dispatch Plan:</span><strong>{editForm.targetRev01 ?? editForm.dispatchTarget}</strong>
                       </div>
@@ -678,7 +708,10 @@ export default function MasterDatabase() {
                         <span>Production Plan (w/ Buffer):</span><strong>{Math.ceil((editForm.targetRev01 ?? editForm.dispatchTarget) * (1 + editForm.rejectionBufferPercentage / 100))}</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                        <span>Shift Qty:</span><strong>{Math.ceil(editForm.productionOutputPerMachine / 2)}</strong>
+                        <span>Shift Planned Shot:</span><strong>{editForm.shiftShot || (editForm.cycleTime > 0 ? Math.round(36000 / editForm.cycleTime) : 0)} shots</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                        <span>Shift Planned Qty (Cavity × Shot):</span><strong style={{ color: '#2e7d32' }}>{(editForm.noOfCavity || 1) * (editForm.shiftShot || (editForm.cycleTime > 0 ? Math.round(36000 / editForm.cycleTime) : 0))} pcs</strong>
                       </div>
                     </div>
                   </div>
@@ -699,10 +732,10 @@ export default function MasterDatabase() {
                   <th>Part No / Name</th>
                   <th>Customer</th>
                   <th>Core / HT</th>
+                  <th>No of Cavity</th>
                   <th>Cycle (s)</th>
-                  <th>M/C output/day</th>
+                  <th>Shift Shot</th>
                   <th>Daily Target</th>
-                  <th>Shift Target</th>
                   <th>Dispatch Plan</th>
                   <th>Buffer %</th>
                   <th>Production Plan</th>
@@ -722,9 +755,11 @@ export default function MasterDatabase() {
                   const prodTarget = Math.ceil(effectiveAsk * (1 + effectiveBuffer / 100));
                   const rawMaterial = prodTarget * r.castingWeight;
                   const dailyTarget = Math.ceil(prodTarget / 25);
-                  const shiftQty = r.productionOutputPerMachine && r.productionOutputPerMachine > 0
-                    ? Math.ceil(r.productionOutputPerMachine / 2)
-                    : Math.ceil(prodTarget / 50);
+                  const noOfCavity = r.noOfCavity && r.noOfCavity > 0 ? r.noOfCavity : 1;
+                  const shiftShot = r.shiftShot && r.shiftShot > 0 
+                    ? r.shiftShot 
+                    : (r.cycleTime && r.cycleTime > 0 ? Math.round(36000 / r.cycleTime) : 0);
+                  const shiftPlannedQty = noOfCavity * shiftShot;
                   const coreQty = r.requiresCore ? prodTarget : '-';
                   const hasEdits = !!monthlyEdits[r.partId];
                   return (
@@ -741,10 +776,15 @@ export default function MasterDatabase() {
                           {r.requiresHT ? <span style={{ color: '#f57c00', fontWeight: 'bold' }}>{r.htType || 'HT'}</span> : <span style={{ color: '#aaa' }}>No HT</span>}
                         </div>
                       </td>
-                      <td>{r.cycleTime}</td>
-                      <td>{r.productionOutputPerMachine}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{noOfCavity}</td>
+                      <td>{r.cycleTime || (shiftShot > 0 ? Math.round(36000 / shiftShot) : 0)}</td>
+                      <td style={{ fontWeight: 'bold', color: '#1565c0' }}>
+                        {shiftShot}
+                        <div style={{ fontSize: 10, color: '#666', fontWeight: 'normal' }}>
+                          ({shiftPlannedQty} pcs)
+                        </div>
+                      </td>
                       <td style={{ fontWeight: 'bold', color: '#0277bd' }}>{dailyTarget}</td>
-                      <td style={{ fontWeight: 'bold', color: '#1565c0' }}>{shiftQty}</td>
                       <td style={{ background: '#f8fbff' }}>
                         {monthlyUpdateMode ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

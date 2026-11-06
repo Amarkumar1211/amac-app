@@ -406,7 +406,9 @@ api.MapGet("/api/masterdatabase", async (string monthYear, AppDbContext db) =>
             Customer = part.Customer,
             ShotWeight = part.ShotWeight,
             CastingWeight = part.CastingWeight,
-            CycleTime = part.CycleTime,
+            CycleTime = part.CycleTime > 0 ? part.CycleTime : (part.ShiftShot > 0 ? Math.Round(36000.0 / part.ShiftShot) : 0),
+            NoOfCavity = part.NoOfCavity > 0 ? part.NoOfCavity : 1,
+            ShiftShot = part.ShiftShot > 0 ? part.ShiftShot : (part.CycleTime > 0 ? Math.Round(36000.0 / part.CycleTime) : 0),
             Material = part.Material,
             RequiresCore = part.RequiresCore,
             CoreType = part.CoreType,
@@ -451,7 +453,22 @@ api.MapGet("/api/masterdatabase", async (string monthYear, AppDbContext db) =>
     part.Customer = dto.Customer;
     part.ShotWeight = dto.ShotWeight;
     part.CastingWeight = dto.CastingWeight;
-    part.CycleTime = dto.CycleTime;
+    part.NoOfCavity = dto.NoOfCavity > 0 ? dto.NoOfCavity : 1;
+    if (dto.CycleTime > 0)
+    {
+        part.CycleTime = dto.CycleTime;
+        part.ShiftShot = dto.ShiftShot > 0 ? dto.ShiftShot : Math.Round(36000.0 / dto.CycleTime);
+    }
+    else if (dto.ShiftShot > 0)
+    {
+        part.ShiftShot = dto.ShiftShot;
+        part.CycleTime = Math.Round(36000.0 / dto.ShiftShot);
+    }
+    else
+    {
+        part.CycleTime = 0;
+        part.ShiftShot = 0;
+    }
     part.Material = dto.Material;
     part.RequiresCore = dto.RequiresCore;
     part.CoreType = dto.CoreType;
@@ -551,7 +568,22 @@ api.MapPost("/api/masterdatabase/bulk", async ([FromBody] List<MasterDatabaseDto
             part.Customer = dto.Customer;
             part.ShotWeight = dto.ShotWeight;
             part.CastingWeight = dto.CastingWeight;
-            part.CycleTime = dto.CycleTime;
+            part.NoOfCavity = dto.NoOfCavity > 0 ? dto.NoOfCavity : 1;
+            if (dto.CycleTime > 0)
+            {
+                part.CycleTime = dto.CycleTime;
+                part.ShiftShot = dto.ShiftShot > 0 ? dto.ShiftShot : Math.Round(36000.0 / dto.CycleTime);
+            }
+            else if (dto.ShiftShot > 0)
+            {
+                part.ShiftShot = dto.ShiftShot;
+                part.CycleTime = Math.Round(36000.0 / dto.ShiftShot);
+            }
+            else
+            {
+                part.CycleTime = 0;
+                part.ShiftShot = 0;
+            }
             part.Material = dto.Material;
             part.RequiresCore = dto.RequiresCore;
             part.CoreType = dto.CoreType;
@@ -832,17 +864,22 @@ api.MapPost("/api/productionentries/bulk-import", async ([FromBody] BulkImportPr
                 continue;
             }
 
-            // Planned Qty
+            // Planned Qty: No of Cavity * Shift Shot (where Shift Shot = (10hrs * 3600) / Cycle Time = 36000 / Cycle Time)
             double planned = item.PlannedQty;
             if (planned <= 0)
             {
-                if (part.ProductionOutputPerMachine > 0)
+                int cavity = part.NoOfCavity > 0 ? part.NoOfCavity : 1;
+                double shots = part.ShiftShot > 0 
+                    ? part.ShiftShot 
+                    : (part.CycleTime > 0 ? Math.Round(36000.0 / part.CycleTime) : 0);
+                
+                if (shots > 0)
+                {
+                    planned = cavity * shots;
+                }
+                else if (part.ProductionOutputPerMachine > 0)
                 {
                     planned = Math.Ceiling(part.ProductionOutputPerMachine / 2.0);
-                }
-                else if (part.CycleTime > 0)
-                {
-                    planned = Math.Round(27000.0 / part.CycleTime);
                 }
             }
 

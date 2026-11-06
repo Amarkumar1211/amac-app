@@ -137,6 +137,11 @@ export default function HODReportsView({ entries, operators = [], masterParts = 
         if (e.actualQty === 0 && (e.gapReasonMachineBreakdown || (e.remark && e.remark.includes('[MACHINE ISSUE')) || (e.traceabilityBatchId && e.traceabilityBatchId.includes('DOWN-')))) {
             const partInfo = getPartInfo(e);
             const part = e.part || masterParts?.find((p: any) => (p.partNo && partInfo.partNo && p.partNo.trim().toLowerCase() === partInfo.partNo.trim().toLowerCase()));
+            const shots = part?.shiftShot || (part?.cycleTime ? Math.round(36000 / part.cycleTime) : 0);
+            const cav = part?.noOfCavity || 1;
+            if (shots > 0) {
+                return cav * shots;
+            }
             if (part?.productionOutputPerMachine && part.productionOutputPerMachine > 0) {
                 return Math.ceil(part.productionOutputPerMachine / 2);
             }
