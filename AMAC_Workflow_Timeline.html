@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AMAC Production System – Workflow & Timeline</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── PRINT SETUP ─────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 12mm 15mm;
+  }
+
+  @media print {
+    .page-break { page-break-before: always; }
+    body > .page:first-of-type { page-break-before: auto; }
+    
+    .no-print { display: none !important; }
+    
+    body { 
+      font-size: 11.5px; 
+      background: white; 
+    }
+    
+    .page { 
+      padding: 0 !important;
+      margin: 0 !important;
+      max-width: 100% !important;
+    }
+
+    .card, .info-box, .warn-box, .flow-step, .week-block {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    
+    table { break-inside: auto; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+
+  /* ── COVER PAGE ──────────────────────────────── */
+  .cover {
+    min-height: 100vh;
+    background: linear-gradient(145deg, #0b3d1f 0%, #1a6b38 50%, #0b3d1f 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    border: 80px solid rgba(255,255,255,0.04);
+    top: -100px; right: -100px;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    border: 50px solid rgba(255,255,255,0.04);
+    bottom: -50px; left: -50px;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #b8edc8;
+    padding: 6px 20px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+  }
+  .cover h1 {
+    color: white;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    max-width: 700px;
+  }
+  .cover h2 {
+    color: #b8edc8;
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 50px;
+    max-width: 600px;
+  }
+  .cover-divider {
+    width: 80px; height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    margin: 0 auto 50px;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 600px;
+    width: 100%;
+  }
+  .cover-meta-item {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 18px 14px;
+    color: white;
+  }
+  .cover-meta-item .label { font-size: 10px; color: #b8edc8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .cover-meta-item .value { font-size: 14px; font-weight: 700; }
+  .cover-footer {
+    position: absolute;
+    bottom: 30px;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+  }
+
+  /* ── SECTION PAGES ───────────────────────────── */
+  .page {
+    padding: 50px 0 40px;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 30px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #e8f3ed;
+  }
+  .section-number {
+    width: 40px; height: 40px;
+    background: #0b3d1f;
+    color: white;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 22px; font-weight: 800; color: #0b3d1f; }
+  .section-sub { font-size: 13px; color: #888; margin-top: 2px; }
+
+  /* ── TOC ──────────────────────────────────────── */
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed #e0e0e0;
+    font-size: 13px;
+  }
+  .toc-item:last-child { border: none; }
+  .toc-item .toc-left { display: flex; align-items: center; gap: 12px; }
+  .toc-num {
+    width: 28px; height: 28px;
+    background: #e8f3ed;
+    color: #0b3d1f;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px;
+  }
+  .toc-item .toc-title { font-weight: 600; color: #1a1a2e; }
+  .toc-item .toc-page { color: #0b3d1f; font-weight: 700; font-size: 12px; }
+
+  /* ── BOXES & CARDS ───────────────────────────── */
+  .info-box {
+    background: #f0f8f2;
+    border-left: 4px solid #0b3d1f;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 12.5px;
+    color: #2a4a2a;
+  }
+  .warn-box {
+    background: #fff8e1;
+    border-left: 4px solid #f9a825;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 12.5px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h4 { font-size: 13px; font-weight: 700; color: #0b3d1f; margin-bottom: 8px; }
+  .card p, .card li { font-size: 12px; color: #555; line-height: 1.6; }
+  .card ul { padding-left: 16px; }
+
+  /* ── FLOW DIAGRAM ────────────────────────────── */
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 6px;
+    align-items: flex-start;
+  }
+  .flow-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 36px;
+  }
+  .flow-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #0b3d1f;
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .flow-line {
+    width: 2px;
+    flex: 1;
+    background: linear-gradient(to bottom, #0b3d1f, #e0e0e0);
+    min-height: 30px;
+    margin-top: 2px;
+  }
+  .flow-content {
+    flex: 1;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .flow-content h4 { font-size: 13px; font-weight: 700; color: #0b3d1f; margin-bottom: 4px; }
+  .flow-content p { font-size: 12px; color: #555; margin-bottom: 6px; }
+  .flow-content .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .tag {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  .tag-green { background: #e8f3ed; color: #0b3d1f; }
+  .tag-blue { background: #e3f2fd; color: #1565c0; }
+  .tag-orange { background: #fff3e0; color: #e65100; }
+  .tag-red { background: #ffebee; color: #c62828; }
+
+  /* ── DEPT TABLE ──────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #0b3d1f;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  tr:last-child td { border-bottom: none; }
+  td strong { color: #0b3d1f; }
+
+  /* ── TIMELINE / GANTT ────────────────────────── */
+  .week-block {
+    margin-bottom: 22px;
+  }
+  .week-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .week-badge {
+    background: #0b3d1f;
+    color: white;
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .week-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .week-sub { font-size: 11px; color: #888; }
+  .day-row {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 7px;
+    margin-bottom: 4px;
+    border: 1px solid #eee;
+    background: white;
+  }
+  .day-num {
+    font-weight: 800;
+    font-size: 13px;
+    color: #0b3d1f;
+  }
+  .day-task { font-size: 12px; color: #333; }
+  .day-result {
+    font-size: 11px;
+    color: white;
+    background: #0b3d1f;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+
+  /* ── WATERMARK / FOOTER ──────────────────────── */
+  .doc-footer {
+    text-align: center;
+    color: #bbb;
+    font-size: 10px;
+    padding: 30px 0 10px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 40px;
+  }
+
+  .print-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #0b3d1f;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(11,61,31,0.4);
+    z-index: 999;
+  }
+  .print-btn:hover { background: #0e5229; }
+
+  h3 { font-size: 15px; font-weight: 700; color: #0b3d1f; margin: 20px 0 10px; }
+  h4 { font-size: 13px; font-weight: 700; color: #1a1a2e; margin: 14px 0 6px; }
+  p { margin-bottom: 10px; color: #444; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { color: #444; margin-bottom: 4px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+
+
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 3: SYSTEM OVERVIEW                                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">1</div>
+    <div>
+      <div class="section-title">System Overview</div>
+      <div class="section-sub">What is this software and why does AMAC need it?</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>In one sentence:</strong> This is a digital factory control system that tracks every aluminium casting — from the moment it is poured into a machine, through every quality and finishing department, all the way to the final delivery to the customer.
+  </div>
+
+  <h3>The Problem Today</h3>
+  <p>Currently, AMAC tracks production using physical registers, verbal communication between departments, and Excel sheets. This creates several problems:</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Manual Errors</h4>
+      <ul>
+        <li>Data entered incorrectly in registers</li>
+        <li>Calculations done by hand — wrong totals</li>
+        <li>No way to verify who entered what</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>No Visibility</h4>
+      <ul>
+        <li>Management cannot see live status</li>
+        <li>Rejection rates only known at month-end</li>
+        <li>Cannot track where a specific batch is</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>No Accountability</h4>
+      <ul>
+        <li>Cannot trace which operator made a defective part</li>
+        <li>No department-wise performance history</li>
+        <li>Disputes during customer complaints</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Planning Gaps</h4>
+      <ul>
+        <li>Targets not clearly communicated to floor</li>
+        <li>No comparison of plan vs actual per shift</li>
+        <li>No daily efficiency measurement</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>How This System Solves It</h3>
+  <p>Every person in the factory — from the casting operator to the final inspector — has their own dedicated login. They record their work digitally. The system automatically:</p>
+  <ul>
+    <li>Calculates efficiency, rejection percentage, and good output</li>
+    <li>Generates a unique tracking number for every batch of parts</li>
+    <li>Shows management a live dashboard with real factory data</li>
+    <li>Lets Admin compare planned targets vs actual output — daily, weekly, monthly</li>
+    <li>Traces any part's complete journey in seconds</li>
+  </ul>
+
+  <h3>System Structure</h3>
+  <div class="grid-3">
+    <div class="card" style="text-align:center;">
+      <h4 style="color:#1565c0;">Browser Screen</h4>
+      <p>What users see and interact with. Works on any computer or tablet in the factory.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h4 style="color:#e65100;">Application Server</h4>
+      <p>Handles all the calculations, rules, and communication between screen and database.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h4 style="color:#0b3d1f;">SQL Server Database</h4>
+      <p>Stores all data permanently and securely. Backed up automatically.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 4: ROLES                                                  -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">2</div>
+    <div>
+      <div class="section-title">Who Uses It — Roles &amp; Access</div>
+      <div class="section-sub">Each person has their own login. Each login only opens what they need.</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="border:2px solid #0b3d1f;">
+      <h4 style="font-size:15px;">Admin (Management)</h4>
+      <p><strong>One account — Full access to everything.</strong></p>
+      <ul>
+        <li>Set monthly dispatch targets per part</li>
+        <li>Set daily shift production targets per machine</li>
+        <li>Add, edit, delete Parts, Operators, Supervisors</li>
+        <li>View live dashboard and all reports</li>
+        <li>Approve or reject department entries</li>
+        <li>Reset any department's login password</li>
+        <li>Export data to Excel</li>
+        <li>Search any batch by traceability number</li>
+      </ul>
+    </div>
+    <div class="card" style="border:2px solid #1565c0;">
+      <h4 style="font-size:15px;">Department Users (Floor Staff)</h4>
+      <p><strong>6 separate accounts — Each sees only their own screen.</strong></p>
+      <ul>
+        <li>Log in with department-specific username &amp; password</li>
+        <li>Only their department screen opens — nothing else</li>
+        <li>Enter production or processing data for their shift</li>
+        <li>Submit entries for Admin approval</li>
+        <li>Cannot see other departments' data</li>
+        <li>Cannot access Reports, Dashboard, or Admin Panel</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Complete List of Login Accounts</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Department</th><th>Username</th><th>Access Level</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Administration</strong></td><td>admin</td><td>Full access to all screens</td></tr>
+      <tr><td>2</td><td><strong>Production (Casting)</strong></td><td>production</td><td>Production entry screen only</td></tr>
+      <tr><td>3</td><td><strong>DCF (Decoring, Cutting, Fettling)</strong></td><td>dcf</td><td>DCF screen only</td></tr>
+      <tr><td>4</td><td><strong>Quality</strong> (Visual 1, UT, Visual 2, Final)</td><td>quality</td><td>Quality stage screens only</td></tr>
+      <tr><td>5</td><td><strong>HT & Finishing</strong> (HT, Oven, Shot Blast)</td><td>ht_finishing</td><td>HT & Finishing screens only</td></tr>
+      <tr><td>6</td><td><strong>Machining</strong></td><td>machining</td><td>Machining tracking screen only</td></tr>
+      <tr><td>7</td><td><strong>Storage & Dispatch</strong></td><td>storage_dispatch</td><td>Storage & Dispatch screens only</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn-box">
+    <strong>Security Note:</strong> All passwords are stored in encrypted form. Even the system administrator cannot read them. Passwords can only be reset — not viewed. Admin can reset any department password from the Admin Panel → User Accounts section.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 5: DATA FLOW                                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">3</div>
+    <div>
+      <div class="section-title">Complete Data Flow — Zero to End</div>
+      <div class="section-sub">How information moves through the system from setup to dispatch</div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle">1</div>
+      <div class="flow-line"></div>
+    </div>
+    <div class="flow-content">
+      <h4>One-Time Setup — Admin configures the system</h4>
+      <p>Before operations begin, the Admin enters the master reference data. This is done only once and updated when things change.</p>
+      <ul>
+        <li><strong>Parts Master:</strong> Part Number, Part Name, Customer, Shot Weight, Casting Weight, Cycle Time, Output per Machine per Shift, whether it needs Core or Heat Treatment, Dispatch Location.</li>
+        <li><strong>Supervisors:</strong> Name, active/inactive status.</li>
+        <li><strong>Operators:</strong> Punch Number (unique ID), Name, Alias Letter (used in Traceability ID), Department, Shift, Supervisor assignment.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag tag-blue">Admin Only</span>
+        <span class="tag tag-green">Stored permanently in database</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle">2</div>
+      <div class="flow-line"></div>
+    </div>
+    <div class="flow-content">
+      <h4>Planning — Admin sets targets before each period</h4>
+      <p>Admin creates production targets at two levels:</p>
+      <ul>
+        <li><strong>Monthly Dispatch Plan:</strong> For each part, Admin enters how many pieces must be dispatched to the customer this month. This is the monthly target.</li>
+        <li><strong>Daily Shift Plan:</strong> For each working day, Admin assigns — which part runs on which machine, in which shift, and how many pieces are expected. This is the daily target that operators are measured against.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag tag-blue">Admin Only</span>
+        <span class="tag tag-orange">Updated daily/monthly</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle">3</div>
+      <div class="flow-line"></div>
+    </div>
+    <div class="flow-content">
+      <h4>Production Entry — Supervisor logs actual casting data</h4>
+      <p>At the end of each shift, the Production Supervisor logs in and enters what was actually produced:</p>
+      <ul>
+        <li>Date, Shift (A / B / C), Supervising Supervisor</li>
+        <li>For each machine: Die/Machine Number, Part, Operator, Planned Qty (auto-fills from Daily Plan), Actual Qty produced, Rejection Qty</li>
+      </ul>
+      <p><strong>System automatically calculates:</strong> Good Qty = Actual – Rejection | Efficiency % = (Actual ÷ Planned) × 100 | Rejection % = (Rejection ÷ Actual) × 100</p>
+      <p><strong>Unique Traceability ID is generated</strong> (e.g., AMAC-20260921-SA-M3-OP12). This number follows the parts through every department.</p>
+      <div class="tags">
+        <span class="tag tag-green">Auto-calculated KPIs</span>
+        <span class="tag tag-orange">Traceability ID generated</span>
+        <span class="tag tag-blue">Status: Submitted → Approved</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle">4</div>
+      <div class="flow-line"></div>
+    </div>
+    <div class="flow-content">
+      <h4>Downstream Processing — 6 Departments log their work</h4>
+      <p>Parts pass through subsequent departments. Each department supervisor logs in, enters their Traceability ID, and records:</p>
+      <ul>
+        <li>How many pieces came in (Input Qty)</li>
+        <li>How many were rejected / found defective (Rejection Qty)</li>
+        <li>System calculates: Processed Qty = Input – Rejection</li>
+      </ul>
+      <p>Each entry goes to <strong>Pending Approval</strong> → Admin approves or returns with comments → Approved entries become permanent records.</p>
+      <div class="tags">
+        <span class="tag tag-red">Rejection tracked per department</span>
+        <span class="tag tag-green">Linked to Traceability ID</span>
+        <span class="tag tag-blue">6 departments tracked</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle">5</div>
+    </div>
+    <div class="flow-content">
+      <h4>Dispatch → Reports → Management Decisions</h4>
+      <p>Once parts reach the Storage & Dispatch department and are logged as dispatched, the complete cycle is closed. Admin can at any time:</p>
+      <ul>
+        <li>Search any Traceability ID to see the full history of that batch</li>
+        <li>View planned vs actual by part, by shift, by date range</li>
+        <li>See rejection rates per department</li>
+        <li>Download everything as Excel reports</li>
+        <li>View live dashboard with today's production status</li>
+      </ul>
+      <div class="tags">
+        <span class="tag tag-green">Live dashboard</span>
+        <span class="tag tag-blue">Excel export</span>
+        <span class="tag tag-orange">Full traceability</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 6-7: DEPARTMENT DETAIL                                    -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">4</div>
+    <div>
+      <div class="section-title">Department-by-Department Processing</div>
+      <div class="section-sub">The exact journey of every part from casting to dispatch</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    The same Traceability Batch ID links every department's record together. If you search for this ID, you instantly see what happened at every stage.
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Department</th>
+        <th>Login Account</th>
+        <th>What is Logged</th>
+        <th>What is Calculated</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Production (Casting)</strong></td>
+        <td>production</td>
+        <td>Machine, Operator, Part, Planned Qty, Actual Qty, Rejection Qty, Shift, Date</td>
+        <td>Efficiency %, Rejection %, Good Qty, Traceability ID generated</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>DCF (Decoring, Cutting, Fettling)</strong></td>
+        <td>dcf</td>
+        <td>Trace ID, Input Qty received, Rejection Qty, Operator, Shift, Date, Reason for rejection</td>
+        <td>Processed Qty = Input – Rejection</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Quality</strong> (Visual 1, UT, Visual 2, Final)</td>
+        <td>quality</td>
+        <td>Trace ID, Check Stage (VI1/UT/VI2/Final), Input Qty, Pass/Fail count, Defects noted</td>
+        <td>Pass Qty, Rejection % at each quality check</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>HT & Finishing</strong> (HT, Oven, Blast)</td>
+        <td>ht_finishing</td>
+        <td>Trace ID, Stage (HT/Oven/Blasting), Input Qty, Rejection Qty, Batch/Furnace info</td>
+        <td>Pass Qty, Rejection % at finishing stages</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>Third-Party Machining</strong></td>
+        <td>machining</td>
+        <td>Trace ID, Input Qty sent out, Qty returned after machining, Rejection Qty</td>
+        <td>Pass Qty, Rejection %</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>Storage & Dispatch</strong></td>
+        <td>storage_dispatch</td>
+        <td>Trace ID, Qty stored (100% OK parts only), Qty dispatched, Customer, Challan No</td>
+        <td>Stock holding, Dispatched vs Monthly Target comparison</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Part Journey Visual</h3>
+  <div style="background:#f8f9fa; border-radius:12px; padding:20px; text-align:center; font-size:11.5px; color:#555; border:1px solid #e0e0e0;">
+    <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px 0; font-weight:600; line-height:2;">
+      <span style="background:#0b3d1f;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Casting</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#1565c0;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">DCF</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#e65100;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Quality (VI-1 + UT)</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#6a1b9a;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">HT & Finishing</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#1565c0;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Machining</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#e65100;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Quality (VI-2)</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#e65100;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Quality (Final)</span>
+      <span style="color:#999;padding:0 6px;">→</span>
+      <span style="background:#1b5e20;color:white;padding:6px 12px;border-radius:6px; white-space:nowrap;">Storage & Dispatch</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 8: TRACEABILITY                                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">5</div>
+    <div>
+      <div class="section-title">Traceability — Track Any Part, Anytime</div>
+      <div class="section-sub">Every batch gets a unique number that follows it through the entire factory</div>
+    </div>
+  </div>
+
+  <h3>How the Traceability ID is Generated</h3>
+  <div style="background:#1a1a2e; color:#b8edc8; border-radius:10px; padding:18px; font-family:monospace; font-size:13px; margin:16px 0; text-align:center; letter-spacing:2px;">
+    AMAC - 20260921 - SA - M3 - OP12
+  </div>
+  <div class="grid-3">
+    <div class="card" style="text-align:center;"><h4>AMAC</h4><p>Factory prefix</p></div>
+    <div class="card" style="text-align:center;"><h4>20260921</h4><p>Date of production (YYYYMMDD)</p></div>
+    <div class="card" style="text-align:center;"><h4>SA</h4><p>Shift A / Shift B</p></div>
+    <div class="card" style="text-align:center;"><h4>M3</h4><p>Machine / Die Number 3</p></div>
+    <div class="card" style="text-align:center;"><h4>OP12</h4><p>Operator Punch Number</p></div>
+  </div>
+
+  <h3>How to Search for a Part</h3>
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle" style="background:#1565c0;">A</div>
+      <div class="flow-line"></div>
+    </div>
+    <div class="flow-content">
+      <h4>Method 1: Global Search Bar (Top of every page)</h4>
+      <p>Any Admin user types the Traceability ID in the search bar at the top of any screen and presses Enter. The system immediately opens the Traceability report for that batch.</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-left">
+      <div class="flow-circle" style="background:#1565c0;">B</div>
+    </div>
+    <div class="flow-content">
+      <h4>Method 2: Reports → Traceability Tab</h4>
+      <p>Admin opens Reports screen, goes to the Traceability tab, types or pastes the ID, and clicks Search.</p>
+    </div>
+  </div>
+
+  <h3>What the Search Shows</h3>
+  <table>
+    <thead>
+      <tr><th>Stage</th><th>Information Shown</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Production (Casting)</strong></td><td>Date, Shift, Machine, Operator, Part, Planned Qty, Actual Qty, Rejection, Efficiency %</td></tr>
+      <tr><td><strong>DCF</strong></td><td>Date, Input received, Qty rejected in this stage, Qty passed forward</td></tr>
+      <tr><td><strong>Quality (All Stages)</strong></td><td>Date, Pass/Fail count for VI1, UT, VI2, Final, Rejection reason</td></tr>
+      <tr><td><strong>HT & Finishing</strong></td><td>Date, Batch processed, Rejection if any at Heat Treatment, Oven, Blasting</td></tr>
+      <tr><td><strong>Machining</strong></td><td>Stage-by-stage pass/fail</td></tr>
+      <tr><td><strong>Storage & Dispatch</strong></td><td>Date stored (OK parts), Date dispatched, Challan/Vehicle details, Customer name</td></tr>
+      <tr><td><strong>Current Status</strong></td><td>Where is this batch right now — which department has it?</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box">
+    <strong>Customer Complaint Handling:</strong> If a customer raises a complaint about a specific part, AMAC can trace the exact operator, machine, shift, and department that handled it — in under 10 seconds.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 9: REPORTS                                                -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">6</div>
+    <div>
+      <div class="section-title">Reports &amp; Management Analytics</div>
+      <div class="section-sub">What management can see and measure at any time</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" style="border-top:3px solid #0b3d1f;">
+      <h4>Live Dashboard (Home Screen)</h4>
+      <p>Auto-refreshes every 30 seconds. Shows for today:</p>
+      <ul>
+        <li>Total pieces planned</li>
+        <li>Total pieces actually produced</li>
+        <li>Total rejections</li>
+        <li>Overall factory efficiency %</li>
+        <li>Charts: Good vs Rejection, Produced vs Dispatched</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #1565c0;">
+      <h4>Overview Report</h4>
+      <p>Filter by date range and shift. Shows:</p>
+      <ul>
+        <li>Total planned target (sum of all shift plans)</li>
+        <li>Total actual achieved</li>
+        <li>Overall efficiency %</li>
+        <li>Total rejections across factory</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #e65100;">
+      <h4>Part-Wise Analytics</h4>
+      <p>For each part number, shows:</p>
+      <ul>
+        <li>How many planned</li>
+        <li>How many actually made</li>
+        <li>Plan Adherence % (with visual bar)</li>
+        <li>Total rejections and Rejection %</li>
+        <li>Highlighted in red if rejection &gt; 5%</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #c62828;">
+      <h4>Department-Wise Performance</h4>
+      <p>For each of the 6 tracked departments:</p>
+      <ul>
+        <li>Total pieces processed</li>
+        <li>Total rejections at this stage</li>
+        <li>Rejection Rate %</li>
+        <li>Health badge: Healthy / Needs Attention / Critical</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #6a1b9a;">
+      <h4>Traceability Search</h4>
+      <ul>
+        <li>Type any batch number</li>
+        <li>Instantly see full journey of that batch</li>
+        <li>Every stage, every operator, every quantity</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid #2e7d32;">
+      <h4>Excel Export</h4>
+      <ul>
+        <li>Download complete production data as .xlsx</li>
+        <li>Includes all shifts, all parts, all dates</li>
+        <li>Ready for further analysis in Excel</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Comparison Capabilities</h3>
+  <table>
+    <thead>
+      <tr><th>Comparison</th><th>How to View It</th><th>What It Tells You</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Planned vs Actual (Daily)</strong></td><td>Overview Report, filter by date</td><td>Was today's shift target met?</td></tr>
+      <tr><td><strong>Planned vs Actual (Weekly)</strong></td><td>Overview Report, select week range</td><td>Which days underperformed?</td></tr>
+      <tr><td><strong>Planned vs Actual (Monthly)</strong></td><td>Overview + Monthly Dispatch Plan tab</td><td>Are we on track for customer delivery?</td></tr>
+      <tr><td><strong>Rejection by Part</strong></td><td>Part-Wise Analytics tab</td><td>Which part has the most defects?</td></tr>
+      <tr><td><strong>Rejection by Department</strong></td><td>Department-Wise tab</td><td>Which stage is causing the most waste?</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 10-11: TIMELINE                                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">7</div>
+    <div>
+      <div class="section-title">20-Day Development Timeline</div>
+      <div class="section-sub">Day-by-day build plan — what gets completed each day</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Team:</strong> 1 experienced full-stack developer, working full-time 8–10 hours/day. &nbsp;|&nbsp; <strong>Total:</strong> 20 Working Days = 4 Calendar Weeks. &nbsp;|&nbsp; <strong>Buffer recommended:</strong> 3–5 additional days.
+  </div>
+
+  <!-- WEEK 1 -->
+  <div class="week-block">
+    <div class="week-header">
+      <div class="week-badge">Week 1</div>
+      <div>
+        <div class="week-title">Foundation, Login &amp; Admin Panel</div>
+        <div class="week-sub">Days 1–5 • After this week: System is running, Admin can log in and manage Parts &amp; Workers</div>
+      </div>
+    </div>
+    <div class="day-row"><div class="day-num">Day 1</div><div class="day-task">Set up the project structure — frontend screens, backend server, database connection, folder layout. Get basic "Hello World" running end-to-end.</div><div class="day-result">System Running</div></div>
+    <div class="day-row"><div class="day-num">Day 2</div><div class="day-task">Design and create all database tables — Parts, Operators, Supervisors, Production Records, Planning, Department Records, Users. Ensure all relationships are correct.</div><div class="day-result">Database Ready</div></div>
+    <div class="day-row"><div class="day-num">Day 3</div><div class="day-task">Build the secure login system — username/password authentication, role detection, session management. Build the login page with AMAC branding (dark green, logo).</div><div class="day-result">Login Working</div></div>
+    <div class="day-row"><div class="day-num">Day 4</div><div class="day-task">Build Master Parts List — Add, Edit, Delete parts. Excel import for bulk upload. Search and filter. All fields: Part No, Name, Customer, Weights, Output rate, etc.</div><div class="day-result">Parts CRUD Done</div></div>
+    <div class="day-row"><div class="day-num">Day 5</div><div class="day-task">Build Operator and Supervisor management screens. Role-based navigation sidebar. Admin Panel home with all module cards. All department accounts auto-created in database.</div><div class="day-result">Admin Panel Complete</div></div>
+  </div>
+
+  <!-- WEEK 2 -->
+  <div class="week-block">
+    <div class="week-header">
+      <div class="week-badge">Week 2</div>
+      <div>
+        <div class="week-title">Planning Modules &amp; Production Entry</div>
+        <div class="week-sub">Days 6–10 • After this week: Targets can be set. Supervisors can enter actual production with Traceability IDs.</div>
+      </div>
+    </div>
+    <div class="day-row"><div class="day-num">Day 6</div><div class="day-task">Monthly Dispatch Planning screen — Admin selects month, part, and enters required dispatch quantity. Edit and delete existing plans. View all months.</div><div class="day-result">Monthly Plan Done</div></div>
+    <div class="day-row"><div class="day-num">Day 7</div><div class="day-task">Daily Shift Planning screen — Admin assigns part, machine, shift, date, and planned quantity. Links to monthly plan for reference. Edit/delete support.</div><div class="day-result">Daily Plan Done</div></div>
+    <div class="day-row"><div class="day-num">Day 8</div><div class="day-task">Production Entry screen — Bulk session entry form. Select date, shift, supervisor. Add rows for each machine. Auto-fill planned qty from daily shift plan.</div><div class="day-result">Entry Form Done</div></div>
+    <div class="day-row"><div class="day-num">Day 9</div><div class="day-task">Auto-generate Traceability Batch IDs. Auto-calculate Efficiency %, Rejection %, Good Qty. Submit flow — entry goes to "Submitted" status awaiting Admin approval.</div><div class="day-result">Traceability Live</div></div>
+    <div class="day-row"><div class="day-num">Day 10</div><div class="day-task">Admin review screen — see all submitted entries, approve or return with comments. Status tracking: Draft → Submitted → Approved / Returned. Data validation and error messages.</div><div class="day-result">Full Entry Lifecycle</div></div>
+  </div>
+</div>
+
+<div class="page page-break">
+  <!-- WEEK 3 -->
+  <div class="week-block" style="margin-top:0;">
+    <div class="week-header">
+      <div class="week-badge">Week 3</div>
+      <div>
+        <div class="week-title">All Downstream Department Screens</div>
+        <div class="week-sub">Days 11–15 • After this week: Every department from DCF to Dispatch can log their work digitally.</div>
+      </div>
+    </div>
+    <div class="day-row"><div class="day-num">Day 11</div><div class="day-task">DCF (Decoring, Cutting, Fettling) screen — entry, Traceability ID linking, Input Qty, Rejection Qty, submission and approval. Quality screen foundation.</div><div class="day-result">DCF Done</div></div>
+    <div class="day-row"><div class="day-num">Day 12</div><div class="day-task">Quality combined screen. Multi-tab/multi-stage entry (Visual 1, UT, Visual 2, Final). Both with entry, submission, and Admin approve/return flow.</div><div class="day-result">Quality Done</div></div>
+    <div class="day-row"><div class="day-num">Day 13</div><div class="day-task">HT & Finishing combined screen (Heat Treatment, Owening, Shot Blasting) multi-stage entry. Third-Party Machining screen — handles external processing workflow.</div><div class="day-result">HT/Oven/Blast + Mach</div></div>
+    <div class="day-row"><div class="day-num">Day 14</div><div class="day-task">Storage & Dispatch combined screen — log parts being held in warehouse (OK only), then record outgoing shipments with challan, customer, vehicle.</div><div class="day-result">Storage/Dispatch Done</div></div>
+    <div class="day-row"><div class="day-num">Day 15</div><div class="day-task">End-to-End data linking. Full part journey connected end-to-end ensuring no steps can be skipped in sequence. Security checks for each department.</div><div class="day-result">All Depts Complete</div></div>
+  </div>
+
+  <!-- WEEK 4 -->
+  <div class="week-block">
+    <div class="week-header">
+      <div class="week-badge">Week 4</div>
+      <div>
+        <div class="week-title">Reports, Analytics, Polish &amp; Go-Live</div>
+        <div class="week-sub">Days 16–20 • After this week: System is production-ready for daily use.</div>
+      </div>
+    </div>
+    <div class="day-row"><div class="day-num">Day 16</div><div class="day-task">Management Dashboard — live KPI cards (Planned, Actual, Efficiency, Rejections), production vs rejection chart, production vs dispatch chart. Auto-refreshes every 30 seconds.</div><div class="day-result">Dashboard Live</div></div>
+    <div class="day-row"><div class="day-num">Day 17</div><div class="day-task">Part-wise Analytics report with progress bars and colour-coded rejection alerts. Department-wise Performance report with health badges. Both with date and shift filters.</div><div class="day-result">Analytics Done</div></div>
+    <div class="day-row"><div class="day-num">Day 18</div><div class="day-task">Global Traceability Search bar — type any batch ID anywhere, automatically opens traceability result. Excel Export for full production report download.</div><div class="day-result">Search + Export Done</div></div>
+    <div class="day-row"><div class="day-num">Day 19</div><div class="day-task">UI polish — animated loading screens, custom confirmation dialogs, table pagination, smooth transitions. User Accounts screen for Admin to manage department passwords.</div><div class="day-result">Premium UX Done</div></div>
+    <div class="day-row"><div class="day-num">Day 20</div><div class="day-task">Full system testing — all departments, all roles, all data flows. Database performance optimisation. Final bug fixes. Deployment and handover to AMAC team.</div><div class="day-result">SYSTEM GO-LIVE</div></div>
+  </div>
+
+  <h3>Summary Timeline</h3>
+  <div style="background:#0b3d1f; color:white; border-radius:12px; padding:20px; font-size:12px; font-family:monospace;">
+    <div style="margin-bottom:8px; color:#b8edc8;">DAY 1 ─────────────────────────────────── DAY 20</div>
+    <div style="margin-bottom:4px;">Week 1 [━━━━━] Setup · Login · Admin Panel</div>
+    <div style="margin-bottom:4px;">Week 2 [━━━━━] Planning · Production Entry · Traceability</div>
+    <div style="margin-bottom:4px;">Week 3 [━━━━━] All Downstream Department Screens</div>
+    <div>Week 4 [━━━━━] Reports · Analytics · Polish · Go-Live</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 12: CREDENTIALS                                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">8</div>
+    <div>
+      <div class="section-title">Department Login Credentials</div>
+      <div class="section-sub">Default passwords for all 7 department accounts (change after first login)</div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <strong>Important:</strong> These are the default passwords set when the system is first installed. Admin should change all passwords immediately after handing over to department staff. Passwords can be reset anytime from <strong>Admin Panel → User Accounts</strong>.
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Department</th><th>Username</th><th>Default Password</th><th>Change Recommended</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Admin</strong></td><td>admin</td><td>admin123</td><td>Immediately after setup</td></tr>
+      <tr><td>2</td><td><strong>Production (Casting)</strong></td><td>production</td><td>prod123</td><td>Before first shift</td></tr>
+      <tr><td>3</td><td><strong>DCF</strong></td><td>dcf</td><td>dcf123</td><td>Before first shift</td></tr>
+      <tr><td>4</td><td><strong>Quality</strong></td><td>quality</td><td>qual123</td><td>Before first shift</td></tr>
+      <tr><td>5</td><td><strong>HT & Finishing</strong></td><td>ht_finishing</td><td>htf123</td><td>Before first shift</td></tr>
+      <tr><td>6</td><td><strong>Machining</strong></td><td>machining</td><td>mach123</td><td>Before first shift</td></tr>
+      <tr><td>7</td><td><strong>Storage & Dispatch</strong></td><td>storage_dispatch</td><td>disp123</td><td>Before first shift</td></tr>
+    </tbody>
+  </table>
+
+  <h3>How to Reset a Password</h3>
+  <ol style="margin-top:10px;">
+    <li>Admin logs in using username: <strong>admin</strong></li>
+    <li>Click on <strong>Admin Panel</strong> in the left sidebar</li>
+    <li>Click on the <strong>User Accounts</strong> card</li>
+    <li>Find the department in the table</li>
+    <li>Click <strong>Reset Password</strong> button on that row</li>
+    <li>Type the new password and click <strong>Save</strong></li>
+    <li>Inform the department supervisor of their new password</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PAGE 13: BENEFITS                                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-header">
+    <div class="section-number">9</div>
+    <div>
+      <div class="section-title">Business Benefits Summary</div>
+      <div class="section-sub">What AMAC gains by using this system</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Area</th><th>Before This System</th><th>After This System</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Production Tracking</strong></td><td>Paper registers, prone to writing errors and loss</td><td>Digital, timestamped, 100% accurate, never lost</td></tr>
+      <tr><td><strong>Rejection Monitoring</strong></td><td>Only discovered at month-end review</td><td>Known every shift — per machine, per operator</td></tr>
+      <tr><td><strong>Batch Traceability</strong></td><td>Nearly impossible — no cross-department records</td><td>Any batch found in under 10 seconds</td></tr>
+      <tr><td><strong>Plan vs Actual</strong></td><td>Manual Excel comparison — takes hours</td><td>Automatic — available instantly, any date range</td></tr>
+      <tr><td><strong>Department Performance</strong></td><td>No visibility — siloed departments</td><td>Live scores per department with health alerts</td></tr>
+      <tr><td><strong>Customer Complaints</strong></td><td>Cannot identify exact batch or responsible person</td><td>Full history traced in seconds — operator, machine, date</td></tr>
+      <tr><td><strong>Shift Handover</strong></td><td>Verbal communication, information lost</td><td>Digital record — next shift sees exactly what happened</td></tr>
+      <tr><td><strong>Management Reports</strong></td><td>Takes 1–2 days to compile from registers</td><td>Live on screen — zero preparation time</td></tr>
+      <tr><td><strong>Data Security</strong></td><td>Physical papers can be damaged, stolen, or lost</td><td>Stored securely in database with regular backups</td></tr>
+      <tr><td><strong>Audit Readiness</strong></td><td>Manual compilation for audits</td><td>One-click Excel export with full production history</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid-3" style="margin-top:24px;">
+    <div class="card" style="text-align:center; border-top:3px solid #0b3d1f;">
+      <h4 style="font-size:28px; color:#0b3d1f; margin-bottom:4px;">7</h4>
+      <p>Dedicated department login accounts</p>
+    </div>
+    <div class="card" style="text-align:center; border-top:3px solid #1565c0;">
+      <h4 style="font-size:28px; color:#1565c0; margin-bottom:4px;">6</h4>
+      <p>Departments tracked end-to-end</p>
+    </div>
+    <div class="card" style="text-align:center; border-top:3px solid #e65100;">
+      <h4 style="font-size:28px; color:#e65100; margin-bottom:4px;">20</h4>
+      <p>Working days to build and deploy</p>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    AMAC Production Management System &nbsp;|&nbsp; Asiaan Metals &amp; Aluminium Casting Pvt. Ltd. &nbsp;|&nbsp; Confidential Document &nbsp;|&nbsp; September 2026
+  </div>
+</div>
+
+<!-- PRINT BUTTON -->
+<button class="print-btn no-print" onclick="window.print()">
+  Save as PDF
+</button>
+
+</body>
+</html>
